@@ -46,7 +46,7 @@ Then open your terminal in your project directory and run:
 
 ```php
 // Shorthand validation
-is_valid(array $data, array $rules) 
+is_valid(array $data, array $rules, array $custom_messages) 
 
 // Get or set the validation rules
 validation_rules(array $rules); 
@@ -71,7 +71,7 @@ validate(array $input, array $ruleset);
 filter(array $input, array $filterset); 
 
 // Returns human readable error text in an array or string
-get_readable_errors($convert_to_string = false); 
+get_readable_errors($convert_to_string = false, array $custom_error_messages); 
 
 // Fetch an array of validation errors indexed by the field names
 get_errors_array();
@@ -129,6 +129,9 @@ $data = array(
 
 $validated = GUMP::is_valid($data, array(
 	'street' => 'required|street_address'
+), array(
+	'validate_required'	=>	'The "#field" field is required',
+	'validate_street_address'	=> 'The "#field" field needs to be a valid street address',
 ));
 
 if($validated === true) {
