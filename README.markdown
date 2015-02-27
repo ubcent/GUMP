@@ -33,7 +33,7 @@ Add the following to your composer.json file:
 ```json
 {
     "require": {
-        "wixel/gump": "dev-master"
+        "ubcent/gump": "dev-master"
     }
 }
 ```
