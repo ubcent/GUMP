@@ -34,19 +34,16 @@ class GUMP
 	public static $basic_tags     = "<br><p><a><strong><b><i><em><img><blockquote><code><dd><dl><hr><h1><h2><h3><h4><h5><h6><label><ul><li><span><sub><sup>";
 
 	public static $en_noise_words = "about,after,all,also,an,and,another,any,are,as,at,be,because,been,before,
-				  				  	 being,between,both,but,by,came,can,come,could,did,do,each,for,from,get,
-				  				  	 got,has,had,he,have,her,here,him,himself,his,how,if,in,into,is,it,its,it's,like,
-			      				  	 make,many,me,might,more,most,much,must,my,never,now,of,on,only,or,other,
-				  				  	 our,out,over,said,same,see,should,since,some,still,such,take,than,that,
-				  				  	 the,their,them,then,there,these,they,this,those,through,to,too,under,up,
-				  				  	 very,was,way,we,well,were,what,where,which,while,who,with,would,you,your,a,
-				  				  	 b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,$,1,2,3,4,5,6,7,8,9,0,_";
+									 being,between,both,but,by,came,can,come,could,did,do,each,for,from,get,
+									 got,has,had,he,have,her,here,him,himself,his,how,if,in,into,is,it,its,it's,like,
+									 make,many,me,might,more,most,much,must,my,never,now,of,on,only,or,other,
+									 our,out,over,said,same,see,should,since,some,still,such,take,than,that,
+									 the,their,them,then,there,these,they,this,those,through,to,too,under,up,
+									 very,was,way,we,well,were,what,where,which,while,who,with,would,you,your,a,
+									 b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,$,1,2,3,4,5,6,7,8,9,0,_";
 
-	// field characters below will be replaced with a space.
-	protected $fieldCharsToRemove = array('_','-');
-	
-	// ** ------------------------- Validation Helpers ---------------------------- ** //	
-	
+	// ** ------------------------- Validation Helpers ---------------------------- ** //
+
 	/**
 	 * Shorthand method for inline validation
 	 *
@@ -72,7 +69,6 @@ class GUMP
 	 *
 	 * @param array $data
 	 * @param array $filters
-	 * @return mixed
 	 */
 	public static function filter_input(array $data, array $filters)
 	{
@@ -113,10 +109,9 @@ class GUMP
 	 * Adds a custom validation rule using a callback function
 	 *
 	 * @access public
-	 * @param string   $rule
+	 * @param string $rule
 	 * @param callable $callback
 	 * @return bool
-	 * @throws Exception
 	 */
 	public static function add_validator($rule, $callback)
 	{
@@ -135,10 +130,9 @@ class GUMP
 	 * Adds a custom filter using a callback function
 	 *
 	 * @access public
-	 * @param string   $rule
+	 * @param string $rule
 	 * @param callable $callback
 	 * @return bool
-	 * @throws Exception
 	 */
 	public static function add_filter($rule, $callback)
 	{
@@ -187,9 +181,8 @@ class GUMP
 	 * Run the filtering and validation after each other
 	 *
 	 * @param array $data
-	 * @param bool  $check_fields
 	 * @return array
-	 * @throws Exception
+	 * @return boolean
 	 */
 	public function run(array $data, $check_fields = false)
 	{
@@ -234,10 +227,8 @@ class GUMP
 	/**
 	 * Sanitize the input data
 	 *
-	 * @access   public
-	 * @param array $input
-	 * @param null  $fields
-	 * @param bool  $utf8_encode
+	 * @access public
+	 * @param  array $data
 	 * @return array
 	 */
 	public function sanitize(array $input, $fields = NULL, $utf8_encode = true)
@@ -248,9 +239,7 @@ class GUMP
 		{
 			$fields = array_keys($input);
 		}
-		
-		$return = array();
-		
+
 		foreach($fields as $field)
 		{
 			if(!isset($input[$field]))
@@ -285,11 +274,11 @@ class GUMP
 					$value = filter_var($value, FILTER_SANITIZE_STRING);
 				}
 
-				$return[$field] = $value;
+				$input[$field] = $value;
 			}
 		}
 
-		return $return;
+		return $input;
 	}
 
 	/**
@@ -309,7 +298,6 @@ class GUMP
 	 * @param  mixed $input
 	 * @param  array $ruleset
 	 * @return mixed
-	 * @throws Exception
 	 */
 	public function validate(array $input, array $ruleset)
 	{
@@ -357,11 +345,14 @@ class GUMP
 						if (isset($input[$field])) {
 							$result = call_user_func(self::$validation_methods[$rule], $field, $input, $param);
 
-							$result = $this->$method($field, $input, $param);
-	
-							if(is_array($result)) // Validation Failed
+							if (!$result) // Validation Failed
 							{
-								$this->errors[] = $result;
+								$this->errors[] = array(
+									'field' => $field,
+									'value' => $input[$field],
+									'rule'  => $method,
+									'param' => $param
+								);
 							}
 						}
 					}
@@ -379,7 +370,7 @@ class GUMP
 	/**
 	 * Set a readable name for a specified field names
 	 *
-	 * @param string $field
+	 * @param string $field_class
 	 * @param string $readable_name
 	 * @return void
 	 */	
@@ -399,6 +390,9 @@ class GUMP
 	 */
 	public function get_readable_errors($convert_to_string = false, $field_class="field", $error_class="error-message")
 	{
+		$lang = $_SESSION["userLang"]; // плохой способ
+		$feild_word =Helper::get_translate_word($lang, 'VALID_FIELD');
+
 		if(empty($this->errors)) {
 			return ($convert_to_string)? null : array();
 		}
@@ -406,8 +400,7 @@ class GUMP
 		$resp = array();
 
 		foreach($this->errors as $e) {
-		
-			$field = ucwords(str_replace($this->fieldCharsToRemove, chr(32), $e['field']));
+			$field = ucwords(str_replace(array('_','-'), chr(32), $e['field']));
 			$param = $e['param'];
 			
 			// Let's fetch explicit field names if they exist
@@ -420,23 +413,23 @@ class GUMP
 					$resp[] = "There is no validation rule for <span class=\"$field_class\">$field</span>";
 					break;
 				case 'validate_required':
-					$resp[] = "The <span class=\"$field_class\">$field</span> field is required";
+					$resp[] = $feild_word." <span class=\"$field_class\">\"$field\"</span> ".Helper::get_translate_word($lang, 'VALID_REQIRED');
 					break;
 				case 'validate_valid_email':
-					$resp[] = "The <span class=\"$field_class\">$field</span> field is required to be a valid email address";
+					$resp[] = $feild_word." <span class=\"$field_class\">\"$field\"</span> ".Helper::get_translate_word($lang, 'VALID_EMAIL');
 					break;
 				case 'validate_max_len':
 					if($param == 1) {
-						$resp[] = "The <span class=\"$field_class\">$field</span> field needs to be shorter than $param character";
+						$resp[] = "<span class=\"$field_class\">\"$field\"</span> field needs to be shorter than $param character";
 					} else {
-						$resp[] = "The <span class=\"$field_class\">$field</span> field needs to be shorter than $param characters";
+						$resp[] = " <span class=\"$field_class\">$field</span> field needs to be shorter than $param characters";
 					}
 					break;
 				case 'validate_min_len':
 					if($param == 1) {
-						$resp[] = "The <span class=\"$field_class\">$field</span> field needs to be longer than $param character";
+						$resp[] = $feild_word." <span class=\"$field_class\">$field</span> ".Helper::get_translate_word($lang, 'VALID_LENGTH')." $param ".Helper::get_translate_word($lang, 'VALID_SYMBOLS');
 					} else {
-						$resp[] = "The <span class=\"$field_class\">$field</span> field needs to be longer than $param characters";
+						$resp[] = $feild_word." <span class=\"$field_class\">$field</span> ".Helper::get_translate_word($lang, 'VALID_LENGTH')." $param ".Helper::get_translate_word($lang, 'VALID_SYMBOLS');
 					}
 					break;
 				case 'validate_exact_len':
@@ -450,7 +443,7 @@ class GUMP
 					$resp[] = "The <span class=\"$field_class\">$field</span> field may only contain alpha characters(a-z)";
 					break;
 				case 'validate_alpha_numeric':
-					$resp[] = "The <span class=\"$field_class\">$field</span> field may only contain alpha-numeric characters";
+					$resp[] = $feild_word." <span class=\"$field_class\">$field</span> ".Helper::get_translate_word($lang, 'VALID_SYMBOLS');
 					break;
 				case 'validate_alpha_dash':
 					$resp[] = "The <span class=\"$field_class\">$field</span> field may only contain alpha characters &amp; dashes";
@@ -485,12 +478,6 @@ class GUMP
 				case 'validate_contains':
 					$resp[] = "The <span class=\"$field_class\">$field</span> field needs to contain one of these values: ".implode(', ', $param);
 					break;
-				case 'validate_containsList':
-					$resp[] = "The <span class=\"$field_class\">$field</span> field needs contain a value from its drop down list";
-					break;
-				case 'validate_doesNotContainList':
-					$resp[] = "The <span class=\"$field_class\">$field</span> field contains a value that is not accepted";
-					break;
 				case 'validate_street_address':
 					$resp[] = "The <span class=\"$field_class\">$field</span> field needs to be a valid street address";
 					break;
@@ -503,11 +490,11 @@ class GUMP
 				case 'validate_max_numeric':
 					$resp[] = "The <span class=\"$field_class\">$field</span> field needs to be a numeric value, equal to, or lower than $param";
 					break;
-				case 'validate_starts':
-					$resp[] = "The <span class=\"$field_class\">$field</span> field needs to start with $param";
+				case 'validate_pass_repass':
+					$resp[] = $feild_word." <span class=\"$field_class\">\"$field\"</span> ".Helper::get_translate_word($lang, 'VALID_PASSREPEAT');
 					break;
 				default:
-					$resp[] = "The <span class=\"$field_class\">$field</span> field is invalid";				
+					$resp[] = $feild_word." <span class=\"$field_class\">\"$field\"</span> ".Helper::get_translate_word($lang, 'VALID_INCORRECT');
 			}
 		}
 
@@ -523,128 +510,12 @@ class GUMP
 	}
 
 	/**
-	 * Process the validation errors and return an array of errors with field names as keys
-	 *
-	 * @param $convert_to_string
-	 * @return array | null (if empty)
-	 */
-	public function get_errors_array($convert_to_string = null)
-	{
-		if(empty($this->errors)) {
-			return ($convert_to_string)? null : array();
-		}
-
-		$resp = array();
-
-		foreach($this->errors as $e) {
-
-			$field = ucwords(str_replace(array('_','-'), chr(32), $e['field']));
-			$param = $e['param'];
-			
-			// Let's fetch explicit field names if they exist
-			if(array_key_exists($e['field'], self::$fields)) {
-				$field = self::$fields[$e['field']];
-			}
-
-			switch($e['rule']) {
-				case 'mismatch' :
-					$resp[$field] = "There is no validation rule for $field";
-					break;
-				case 'validate_required':
-					$resp[$field] = "The $field field is required";
-					break;
-				case 'validate_valid_email':
-					$resp[$field] = "The $field field is required to be a valid email address";
-					break;
-				case 'validate_max_len':
-					if($param == 1) {
-						$resp[$field] = "The $field field needs to be shorter than $param character";
-					} else {
-						$resp[$field] = "The $field field needs to be shorter than $param characters";
-					}
-					break;
-				case 'validate_min_len':
-					if($param == 1) {
-						$resp[$field] = "The $field field needs to be longer than $param character";
-					} else {
-						$resp[$field] = "The $field field needs to be longer than $param characters";
-					}
-					break;
-				case 'validate_exact_len':
-					if($param == 1) {
-						$resp[$field] = "The $field field needs to be exactly $param character in length";
-					} else {
-						$resp[$field] = "The $field field needs to be exactly $param characters in length";
-					}
-					break;
-				case 'validate_alpha':
-					$resp[$field] = "The $field field may only contain alpha characters(a-z)";
-					break;
-				case 'validate_alpha_numeric':
-					$resp[$field] = "The $field field may only contain alpha-numeric characters";
-					break;
-				case 'validate_alpha_dash':
-					$resp[$field] = "The $field field may only contain alpha characters &amp; dashes";
-					break;
-				case 'validate_numeric':
-					$resp[$field] = "The $field field may only contain numeric characters";
-					break;
-				case 'validate_integer':
-					$resp[$field] = "The $field field may only contain a numeric value";
-					break;
-				case 'validate_boolean':
-					$resp[$field] = "The $field field may only contain a true or false value";
-					break;
-				case 'validate_float':
-					$resp[$field] = "The $field field may only contain a float value";
-					break;
-				case 'validate_valid_url':
-					$resp[$field] = "The $field field is required to be a valid URL";
-					break;
-				case 'validate_url_exists':
-					$resp[$field] = "The $field URL does not exist";
-					break;
-				case 'validate_valid_ip':
-					$resp[$field] = "The $field field needs to contain a valid IP address";
-					break;
-				case 'validate_valid_cc':
-					$resp[$field] = "The $field field needs to contain a valid credit card number";
-					break;
-				case 'validate_valid_name':
-					$resp[$field] = "The $field field needs to contain a valid human name";
-					break;
-				case 'validate_contains':
-					$resp[$field] = "The $field field needs to contain one of these values: ".implode(', ', $param);
-					break;
-				case 'validate_street_address':
-					$resp[$field] = "The $field field needs to be a valid street address";
-					break;
-				case 'validate_date':
-					$resp[$field] = "The $field field needs to be a valid date";
-					break;
-				case 'validate_min_numeric':
-					$resp[$field] = "The $field field needs to be a numeric value, equal to, or higher than $param";
-					break;
-				case 'validate_max_numeric':
-					$resp[$field] = "The $field field needs to be a numeric value, equal to, or lower than $param";
-					break;
-				default:
-					$resp[$field] = "The $field field is invalid";				
-			}
-		}
-
-		return $resp;
-	}
-
-	/**
 	 * Filter the input data according to the specified filter set
 	 *
 	 * @access public
 	 * @param  mixed $input
 	 * @param  array $filterset
-	 * @throws Exception
 	 * @return mixed
-	 * @throws Exception
 	 */
 	public function filter(array $input, array $filterset)
 	{
@@ -897,7 +768,6 @@ class GUMP
 
 	// ** ------------------------- Validators ------------------------------------ ** //
 
-		
 	/**
 	 * Verify that a value is contained within the pre-defined value set
 	 *
@@ -905,8 +775,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_contains($field, $input, $param = NULL)
@@ -936,75 +805,8 @@ class GUMP
 			'rule'  => __FUNCTION__,
 			'param' => $param
 		);
+	}
 
-	}	
-	
-	/**
-	 * Verify that a value is contained within the pre-defined value set.
-	 * OUTPUT: will NOT show the list of values.
-	 * 
-	 * Usage: '<index>' => 'containsList,value;value;value'
-	 *
-	 * @access protected
-	 * @param  string $field
-	 * @param  array $input
-	 * @return mixed
-	 */
-	protected function validate_containsList($field, $input, $param = NULL)
-	{
-		$param = trim(strtolower($param));
-	
-		$value = trim(strtolower($input[$field]));
-	
-		$param = explode(";", $param);
-		
-		// consider: in_array(strtolower($value), array_map('strtolower', $param)
-		
-		if(in_array($value, $param)) { // valid, return nothing
-			return;
-		} else {
-			return array(
-					'field' => $field,
-					'value' => $value,
-					'rule'	=> __FUNCTION__,
-					'param' => $param
-			);
-		}
-	}
-	
-	
-	
-	/**
-	 * Verify that a value is NOT contained within the pre-defined value set.
-	 * OUTPUT: will NOT show the list of values.
-	 *
-	 * Usage: '<index>' => 'doesNotContainList,value;value;value'
-	 *
-	 * @access protected
-	 * @param  string $field
-	 * @param  array $input
-	 * @return mixed
-	 */
-	protected function validate_doesNotContainList($field, $input, $param = NULL)
-	{
-		$param = trim(strtolower($param));
-	
-		$value = trim(strtolower($input[$field]));
-	
-		$param = explode(";", $param);
-				
-		if( !in_array($value, $param)) { // valid, return nothing
-			return;
-		} else {
-			return array(
-					'field' => $field,
-					'value' => $value,
-					'rule'	=> __FUNCTION__,
-					'param' => $param
-			);
-		}
-	}
-	
 	/**
 	 * Check if the specified key is present and not empty
 	 *
@@ -1012,8 +814,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_required($field, $input, $param = NULL)
@@ -1038,8 +839,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_valid_email($field, $input, $param = NULL)
@@ -1067,8 +867,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_max_len($field, $input, $param = NULL)
@@ -1108,8 +907,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_min_len($field, $input, $param = NULL)
@@ -1149,8 +947,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_exact_len($field, $input, $param = NULL)
@@ -1190,8 +987,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_alpha($field, $input, $param = NULL)
@@ -1219,8 +1015,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_alpha_numeric($field, $input, $param = NULL)
@@ -1248,8 +1043,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_alpha_dash($field, $input, $param = NULL)
@@ -1271,43 +1065,13 @@ class GUMP
 	}
 
 	/**
-	 * Determine if the provided value contains only alpha numeric characters with spaces
-	 *
-	 * Usage: '<index>' => 'alpha_space'
-	 *
-	 * @access protected
-	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
-	 * @return mixed
-	 */
-	protected function validate_alpha_space($field, $input, $param = NULL)
-	{
-		if(!isset($input[$field]) || empty($input[$field]))
-		{
-			return;
-		}
-
-		if(!preg_match("/^([a-z0-9ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ\s])+$/i", $input[$field]) !== FALSE)
-		{
-			return array(
-				'field' => $field,
-				'value' => $input[$field],
-				'rule'  => __FUNCTION__,
-				'param' => $param
-			);
-		}
-	}
-
-	/**
 	 * Determine if the provided value is a valid number or numeric string
 	 *
 	 * Usage: '<index>' => 'numeric'
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_numeric($field, $input, $param = NULL)
@@ -1335,8 +1099,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_integer($field, $input, $param = NULL)
@@ -1364,8 +1127,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_boolean($field, $input, $param = NULL)
@@ -1395,8 +1157,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_float($field, $input, $param = NULL)
@@ -1424,8 +1185,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_valid_url($field, $input, $param = NULL)
@@ -1453,8 +1213,7 @@ class GUMP
 	 *
 	 * @access protected
 	 * @param  string $field
-	 * @param  array  $input
-	 * @param null    $param
+	 * @param  array $input
 	 * @return mixed
 	 */
 	protected function validate_url_exists($field, $input, $param = NULL)
@@ -1850,34 +1609,6 @@ class GUMP
 			'rule'  => __FUNCTION__,
 			'param' => $param
 		);
-	}
-
-	/**
-	 * Determine if the provided value starts with param
-	 * 
-	 * Usage: '<index>' => 'starts,Z'
-	 *	
-	 * @access protected
-	 * @param  string $field
-	 * @param  array $input
-	 * @return mixed
-	 */	
-	protected function validate_starts($field, $input, $param = NULL)
-	{	
-		if(!isset($input[$field]) || empty($input[$field]))
-		{
-			return;
-		}
-		
-		if(strpos($input[$field], $param) !== 0)
-		{
-			return array(
-				'field' => $field,
-				'value' => $input[$field],
-				'rule'	=> __FUNCTION__,
-				'param' => $param				
-			);
-		}
 	}
 
 	/**
