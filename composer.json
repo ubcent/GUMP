@@ -3,10 +3,11 @@
     "description": "A fast, extensible & stand-alone PHP input validation class that allows you to validate any data",
     "authors": [
         {
-            "name": "Dmitry Bondarchuk",
+            "name": "Dmitry Bondarchuk"
         },    
     ],
     "license": "MIT",
+    "homepage": "",
     "autoload": {
         "files": ["gump.class.php"]
     }
