@@ -50,6 +50,7 @@ class GUMP
 	 * @param array $data The data to be validated
 	 * @param array $validators The GUMP validators
 	 * @return mixed True(boolean) or the array of error messages
+	 * TODO: Добавить языковые параметры
 	 */
 	public static function is_valid(array $data, array $validators)
 	{
