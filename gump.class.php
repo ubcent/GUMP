@@ -29,6 +29,37 @@ class GUMP
 	// Customer filter methods
 	protected static $filter_methods = array();
 
+	// Default validation messages
+	protected static $default_messages = array(
+		'mismatch'	=>	'There is no validation rule for <span class="#field_class">#field</span>',
+		'validate_required'	=>	'The <span class="#field_class">#field</span> field is required',
+		'validate_valid_email'	=>	'The <span class="#field_class">#field</span> field is required to be a valid email address',
+		'validate_max_len'	=>	'The <span class="#field_class">#field</span> field needs to be shorter than #param character',
+		'validate_min_len'	=>	'The <span class="#field_class">#field</span> field needs to be longer than #param character',
+		'validate_exact_len'	=>	'The <span class="#field_class">#field</span> field needs to be exactly #param character in length',
+		'validate_alpha'	=>	'The <span class="#field_class">#field</span> field may only contain alpha characters(a-z)',
+		'validate_alpha_numeric'	=>	'The <span class="#field_class">#field</span> field may only contain alpha-numeric characters',
+		'validate_alpha_dash'	=>	'The <span class="#field_class">#field</span> field may only contain alpha characters &amp; dashes',
+		'validate_numeric'	=>	'The <span class="#field_class">#field</span> field may only contain numeric characters',
+		'validate_integer'	=>	'The <span class="#field_class">#field</span> field may only contain a numeric value',
+		'validate_boolean'	=>	'The <span class="#field_class">#field</span> field may only contain a true or false value',
+		'validate_float'	=>	'The <span class="#field_class">#field</span> field may only contain a float value',
+		'validate_valid_url'	=>	'The <span class="#field_class">#field</span> field is required to be a valid URL',
+		'validate_url_exists'	=>	'The <span class="#field_class">#field</span> URL does not exist',
+		'validate_valid_ip'	=>	'The <span class="#field_class">#field</span> field needs to contain a valid IP address',
+		'validate_valid_cc'	=>	'The <span class="#field_class">#field</span> field needs to contain a valid credit card number',
+		'validate_valid_name'	=>	'The <span class="#field_class">#field</span> field needs to contain a valid human name',
+		'validate_contains'	=>	'The <span class="#field_class">#field</span> field needs to contain one of values',
+		'validate_containsList'	=>	'The <span class="#field_class">#field</span> field needs contain a value from its drop down list',
+		'validate_doesNotContainList'	=>	'The <span class="#field_class">#field</span> field contains a value that is not accepted',
+		'validate_street_address'	=>	'The <span class="#field_class">#field</span> field needs to be a valid street address',
+		'validate_date'	=>	'The <span class="#field_class">#field</span> field needs to be a valid date',
+		'validate_min_numeric'	=>	'The <span class="#field_class">#field</span> field needs to be a numeric value, equal to, or higher than #param',
+		'validate_max_numeric'	=>	'The <span class="#field_class">#field</span> field needs to be a numeric value, equal to, or lower than #param',
+		'validate_starts'	=>	'The <span class="#field_class">#field</span> field needs to start with #param',
+		'default'	=>	'The <span class="#field_class">#field</span> field is invalid',
+	);
+
 	// ** ------------------------- Validation Data ------------------------------- ** //
 
 	public static $basic_tags     = "<br><p><a><strong><b><i><em><img><blockquote><code><dd><dl><hr><h1><h2><h3><h4><h5><h6><label><ul><li><span><sub><sup>";
@@ -52,14 +83,18 @@ class GUMP
 	 * @return mixed True(boolean) or the array of error messages
 	 * TODO: Добавить языковые параметры
 	 */
-	public static function is_valid(array $data, array $validators)
+	public static function is_valid(array $data, array $validators, $messages_array = false)
 	{
 		$gump = new Gump();
 
 		$gump->validation_rules($validators);
 
 		if($gump->run($data) === false) {
-			return $gump->get_readable_errors(false);
+			if(is_array($messages_array)) {
+				return $gump->get_readable_errors(false, $messages_array);
+			} else {
+				return $gump->get_readable_errors(false);
+			}
 		} else {
 			return true;
 		}
@@ -384,16 +419,14 @@ class GUMP
 	 * Process the validation errors and return human readable error messages
 	 *
 	 * @param bool $convert_to_string = false
+	 * @param array|bool $messages = false
 	 * @param string $field_class
 	 * @param string $error_class
 	 * @return array
 	 * @return string
 	 */
-	public function get_readable_errors($convert_to_string = false, $field_class="field", $error_class="error-message")
+	public function get_readable_errors($convert_to_string = false, $messages = false, $field_class="field", $error_class="error-message")
 	{
-		$lang = $_SESSION["userLang"]; // плохой способ
-		$feild_word =Helper::get_translate_word($lang, 'VALID_FIELD');
-
 		if(empty($this->errors)) {
 			return ($convert_to_string)? null : array();
 		}
@@ -409,7 +442,17 @@ class GUMP
 				$field = self::$fields[$e['field']];
 			}
 
-			switch($e['rule']) {
+			if($messages) {
+				$resp[] = str_replace(array('#field_class', '#field', '#param'), array($field_class, $field, $param), $messages[$e['rule']]);
+			} else {
+				if(self::$default_messages[$e['rule']]) {
+					$resp[] = str_replace(array('#field_class', '#field', '#param'), array($field_class, $field, $param), self::$default_messages[$e['rule']]);
+				} else {
+					$resp[] = str_replace(array('#field_class', '#field', '#param'), array($field_class, $field, $param), self::$default_messages['default']);
+				}
+			}
+
+			/*switch($e['rule']) {
 				case 'mismatch' :
 					$resp[] = "There is no validation rule for <span class=\"$field_class\">$field</span>";
 					break;
@@ -496,7 +539,7 @@ class GUMP
 					break;
 				default:
 					$resp[] = $feild_word." <span class=\"$field_class\">\"$field\"</span> ".Helper::get_translate_word($lang, 'VALID_INCORRECT');
-			}
+			}*/
 		}
 
 		if(!$convert_to_string) {
