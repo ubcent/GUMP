@@ -4,11 +4,9 @@
     "authors": [
         {
             "name": "Dmitry Bondarchuk",
-            "homepage": ""
         },    
     ],
     "license": "MIT",
-    "homepage": "",
     "autoload": {
         "files": ["gump.class.php"]
     }
